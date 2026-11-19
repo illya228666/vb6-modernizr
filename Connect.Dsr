@@ -130,7 +130,10 @@ End Sub
 Private Sub AddMenus()
     On Error Resume Next
     Dim cbMenuBar As Object
-    Set cbMenuBar = VBInstance.CommandBars("Menu Bar")
+    ' VB6 localizes the menu bar name. Prefer the active bar when supported.
+    Set cbMenuBar = VBInstance.CommandBars.ActiveMenuBar
+    If cbMenuBar Is Nothing Then Set cbMenuBar = VBInstance.CommandBars("Menu Bar")
+    If cbMenuBar Is Nothing Then Set cbMenuBar = VBInstance.CommandBars("Men" & ChrW$(&HFC) & "leiste")
     If cbMenuBar Is Nothing Then Exit Sub
 
     Set mButtons = New Collection

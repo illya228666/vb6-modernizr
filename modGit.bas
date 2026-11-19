@@ -276,7 +276,8 @@ Private Sub StartNextJob()
 
     mJobOut = TempFile()
     Dim pid As Long
-    pid = Shell("cmd /c cd /d """ & mRepoRoot & """ && git " & args & _
+    ' Let Git resolve the working directory so network UNC paths work.
+    pid = Shell("cmd /c git -C """ & mRepoRoot & """ " & args & _
                 " > """ & mJobOut & """ 2>&1", vbHide)
     If pid = 0 Then Exit Sub
     mJobProc = OpenProcess(PROCESS_QUERY_INFORMATION Or SYNCHRONIZE, 0, pid)
@@ -506,7 +507,7 @@ Private Function RunGit(ByVal args As String, ByVal timeoutMs As Long, _
     If Len(mRepoRoot) = 0 Then Exit Function
     Dim out As String, pid As Long, hProc As Long, waited As Long
     out = TempFile()
-    pid = Shell("cmd /c cd /d """ & mRepoRoot & """ && git " & args & _
+    pid = Shell("cmd /c git -C """ & mRepoRoot & """ " & args & _
                 " > """ & out & """ 2>&1", vbHide)
     If pid = 0 Then Exit Function
     hProc = OpenProcess(PROCESS_QUERY_INFORMATION Or SYNCHRONIZE, 0, pid)

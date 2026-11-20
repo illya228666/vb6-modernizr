@@ -22,6 +22,12 @@ Begin VB.Form frmTabs
       Left            =   120
       Top             =   0
    End
+   Begin VB.Timer tmrSelection
+      Enabled         =   0  'False
+      Interval        =   75
+      Left            =   480
+      Top             =   0
+   End
    Begin VB.Menu mnuCtx
       Caption         =   "ctx"
       Visible         =   0   'False
@@ -130,6 +136,14 @@ Public Sub Reposition()
 End Sub
 
 ' ---------------------------------------------------------------------
+
+Public Sub SetSelectionPolling(ByVal enabled As Boolean)
+    tmrSelection.Enabled = enabled
+End Sub
+
+Private Sub tmrSelection_Timer()
+    Highlight_PollSelection
+End Sub
 
 Private Sub tmrRefresh_Timer()
     On Error Resume Next

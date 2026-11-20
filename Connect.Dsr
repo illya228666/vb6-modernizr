@@ -127,13 +127,19 @@ End Sub
 
 ' ---------------------------------------------------------------------
 
+' Late-bind CommandBars so compilation does not require the Office type library.
+Private Function IDECommandBars() As Object
+    Set IDECommandBars = CallByName(VBInstance, "CommandBars", VbGet)
+End Function
+
 Private Sub AddMenus()
     On Error Resume Next
-    Dim cbMenuBar As Object
+    Dim commandBars As Object, cbMenuBar As Object
+    Set commandBars = IDECommandBars()
     ' VB6 localizes the menu bar name. Prefer the active bar when supported.
-    Set cbMenuBar = VBInstance.CommandBars.ActiveMenuBar
-    If cbMenuBar Is Nothing Then Set cbMenuBar = VBInstance.CommandBars("Menu Bar")
-    If cbMenuBar Is Nothing Then Set cbMenuBar = VBInstance.CommandBars("Men" & ChrW$(&HFC) & "leiste")
+    Set cbMenuBar = commandBars.ActiveMenuBar
+    If cbMenuBar Is Nothing Then Set cbMenuBar = commandBars("Menu Bar")
+    If cbMenuBar Is Nothing Then Set cbMenuBar = commandBars("Men" & ChrW$(&HFC) & "leiste")
     If cbMenuBar Is Nothing Then Exit Sub
 
     Set mButtons = New Collection
@@ -211,12 +217,15 @@ End Function
 
 Private Sub AddToolbar()
     On Error Resume Next
+    Dim commandBars As Object
+    Set commandBars = IDECommandBars()
+
     ' a leftover bar from a crashed session would make Add fail
-    Set mToolBar = VBInstance.CommandBars("Modernizr")
+    Set mToolBar = commandBars("Modernizr")
     If Not mToolBar Is Nothing Then mToolBar.Delete
     Set mToolBar = Nothing
 
-    Set mToolBar = VBInstance.CommandBars.Add("Modernizr", msoBarTop, , True)
+    Set mToolBar = commandBars.Add("Modernizr", msoBarTop, , True)
     If mToolBar Is Nothing Then Exit Sub
 
     ' icon buttons use Office's built-in FaceId glyphs; 0 = text button

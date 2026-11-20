@@ -50,3 +50,4 @@ $RECYCLE.BIN/
 *.dca
 *.tmp
 *.log
+/.vs

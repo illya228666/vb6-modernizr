@@ -185,83 +185,40 @@ physical `/` key of US-style layouts.
 
 ## Building
 
-1. Open `VB6Modernizr.vbp` in VB6.
-2. If references show as MISSING, re-check **Microsoft Visual Basic
-   6.0 Extensibility** and **Microsoft Add-In Designer** under
-   *Project → References*.
-3. *File → Make VB6Modernizr.dll* (run VB6 as administrator once so
-   COM registration succeeds). The Add-In Designer registers the
-   add-in automatically at compile time.
-
-The project is set to **binary compatibility** against
-`compat\VB6Modernizr.dll`, which is committed for that reason alone: it
-is where the add-in's CLSIDs live. Build without it and VB6 mints new
-ones, orphaning the registration in every IDE that has the add-in
-installed — VB6 then says *"'VB6 Modernizr' could not be loaded"* and
-drops it from the Add-In Manager until the DLL is re-registered with
-administrator rights. Leave the setting alone, and don't replace that
-file unless you mean to break compatibility.
-
-Command-line build — **prefer the elevated form**. It is the only one
-whose registration step completes, so it is also the only one that
-leaves the add-in in the Add-In Manager's list. Run it from the repo
-root; it raises one UAC prompt:
+Close VB6 and run this from PowerShell in the repository:
 
 ```powershell
-Start-Process -FilePath "C:\Program Files (x86)\Microsoft Visual Studio\VB98\VB6.EXE" `
-  -ArgumentList '/make','VB6Modernizr.vbp','/out','build.log' `
-  -WorkingDirectory $PWD -Verb RunAs -Wait
+.\build.ps1
 ```
 
-`build.log` then reads only `Build of 'VB6Modernizr.dll' succeeded.`,
-and the Add-In Designer writes the `HKCU` key itself — nothing to put
-back by hand.
+The script finds the local VB6 IDE and builds `VB6Modernizr.dll` beside
+the project. Compiler output goes to `build.log`. A build without
+administrator rights can report “Error accessing the system registry”
+while still producing the DLL. The install script handles registration.
 
-Use `Start-Process -Wait`, not PowerShell's call operator. `VB6.EXE` is
-a GUI application, so `& VB6.EXE /make ...` returns immediately: the
-build is still running when the next command reads `build.log`, there is
-no exit code, and a failure looks exactly like a missing file. From
-`bash`, note that MSYS rewrites a bare `/make` into `C:\Program
-Files\Git\make` — use `//make`, or `MSYS2_ARG_CONV_EXCL='*'`.
+For a manual build, open `VB6Modernizr.vbp` and choose
+*File → Make VB6Modernizr.dll*. If references show as MISSING, check
+**Microsoft Visual Basic 6.0 Extensibility** and **Microsoft Add-In
+Designer** under *Project → References*.
 
-The de-elevated form skips the UAC prompt and costs you the
-registration:
-
-```bat
-cmd /c "set __COMPAT_LAYER=RunAsInvoker&& "C:\Program Files (x86)\Microsoft Visual Studio\VB98\VB6.EXE" /make VB6Modernizr.vbp /out build.log"
-```
-
-That build logs `Error accessing the system registry` and still succeeds:
-the compile is fine, only the re-registration step failed. Binary
-compatibility keeps the COM registration pointing at the new DLL, so the
-add-in still works — but the failed step **removes the add-in from the
-Add-In Manager's list** on the way through, and VB6 comes up without it.
-Put the registry key from *Installing / loading* back (no administrator
-rights needed), or rebuild elevated and have it written for you.
-
-One more trap: the `.vbp` and every source file must keep **CRLF** line
-endings. An editor or a `sed -i` that rewrites one with LF leaves VB6
-silently unable to parse it — a mangled `.vbp` loses its references and
-the build fails with *"User-defined type not defined"* somewhere
-unrelated. `.gitattributes` enforces this for git; it cannot help with
-tools that write the file directly.
+Keep the binary compatibility reference at `compat\VB6Modernizr.dll`.
+It preserves the add-in's COM IDs across builds. Keep CRLF line endings
+in the project and source files so VB6 can read them.
 
 ## Installing / loading
 
-1. Restart VB6, then *Add-Ins → Add-In Manager…* — select
-   **VB6 Modernizr**, check *Loaded/Unloaded* and *Load on Startup*.
-2. If it does not appear, the Add-In Manager's list is missing its
-   registry entry — `vbaddin.ini` is the VB5 mechanism and VB6 does not
-   read it. Under `HKCU\Software\Microsoft\Visual Basic\6.0\Addins`,
-   create a key `VB6Modernizr.Connect` holding `FriendlyName` =
-   "VB6 Modernizr" (REG_SZ), `LoadBehavior` = 0 (REG_DWORD; VB6 raises
-   it to 3 once you tick *Load on Startup*) and `CommandLineSafe` = 0
-   (REG_DWORD). A successful registration writes this key itself, so if
-   it keeps vanishing the DLL is not registered — build elevated (see
-   *Building*) and it will stop.
+With VB6 closed, run this after building:
 
-To uninstall: unload it in the Add-In Manager, then
-`regsvr32 /u VB6Modernizr.dll`.
+```powershell
+.\install.ps1
+```
+
+Approve the Windows elevation prompt. The script registers the DLL
+directly from the checkout and enables **VB6 Modernizr** for the next
+IDE startup. You can manage the add-in under *Add-Ins → Add-In Manager…*.
+
+To uninstall, unload it in the Add-In Manager, close VB6 and use the
+32-bit `regsvr32 /u VB6Modernizr.dll` from an administrator shell.
 
 ## Files the add-in writes
 
